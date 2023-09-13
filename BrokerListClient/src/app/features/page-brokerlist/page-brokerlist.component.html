@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<div class="container center">
+  <div class="groups">
+    <div>
+      <label>證券商總公司代號:   </label>
+      <input type="text" placeholder="輸入證券商總公司代號" [(ngModel)]="headquarterCode">
+    </div>
+    <div class="group date-select D">
+      <label>資料期間:   </label>
+      <input type="text" placeholder="請輸入日期" [(ngModel)]="startDateString">
+      <label> ~ </label>
+      <input type="text" placeholder="請輸入日期" [(ngModel)]="endDateString">
+    </div>
+    <button (click)="GetBrokerList()">查詢</button>
+    <button (click)="UpdateBrokerList()" [disabled]="updateButtonDisabled">重新建立資料</button>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th class="clickable" *ngFor="let col of displayedColumns;let i=index;">
+          {{col}}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of displayedBrokerItems">
+        <td>{{ item.code }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.establishmentDate }}</td>
+        <td>{{ item.address }}</td>
+        <td>{{ item.telephone }}</td>
+        <td>
+          <button (click)="ConfirmDelete(item.code)" *ngIf="IsHeadquarter(item.code)" >delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p-confirmDialog header="Confirm" [style]="{width: '30vw'}"></p-confirmDialog>
+</div>

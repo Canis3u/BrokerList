@@ -1,0 +1,32 @@
+table {
+  width: 100%;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+th {
+  line-height: 3em;
+  background-color: lightblue;
+}
+
+td {
+  line-height: 2em;
+}
+
+tr {
+  text-align:center;
+}
+.groups {
+  width: 40%;
+  display: inline-block;
+  vertical-align: top;
+  line-height: 2em;
+  border: 3px solid black;
+  text-align:center;
+  margin: 1rem;
+}
+.center{
+  text-align:center;
+}
