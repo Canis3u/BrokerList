@@ -40,11 +40,18 @@ export class PageBrokerlistComponent implements OnInit{
   }
 
   ConfirmDelete(code?:string) {
-    console.log(code)
     this.confirmationService.confirm({
         message: 'Are you sure that you want to delete this?',
         accept: () => {
           this.DeleteByCode(code)
+        }
+    });
+  }
+  ConfirmDeleteAll(code?:string) {
+    this.confirmationService.confirm({
+        message: 'Are you sure that you want to delete all?',
+        accept: () => {
+          this.DeleteByCode('All')
         }
     });
   }

@@ -11,8 +11,11 @@
       <label> ~ </label>
       <input type="text" placeholder="請輸入日期" [(ngModel)]="endDateString">
     </div>
-    <button (click)="GetBrokerList()">查詢</button>
-    <button (click)="UpdateBrokerList()" [disabled]="updateButtonDisabled">重新建立資料</button>
+    <div>
+      <button (click)="ConfirmDeleteAll()" >刪除全部資料</button>
+      <button (click)="GetBrokerList()">查詢</button>
+      <button (click)="UpdateBrokerList()" [disabled]="updateButtonDisabled">重新建立資料</button>
+    </div>
   </div>
   <table class="table">
     <thead>
