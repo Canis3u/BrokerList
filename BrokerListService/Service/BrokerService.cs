@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using BrokerListService.Extensions;
 using BrokerListService.Models;
+using BrokerListService.Repositories;
+using BrokerListService.Repositories.Interface;
 using BrokerListService.Service.Interface;
 using BrokerListService.ServiceModel;
 using BrokerListService.Utils;
@@ -18,11 +20,14 @@ namespace BrokerListService.Service
     public class BrokerService:IBrokerService
     {
         private readonly IMapper _mapper;
-        private BrokerListContext _brokerListContext;
-        public BrokerService(IMapper mapper, BrokerListContext brokerListContext) 
+        private readonly IHeadquarterBrokerRepository _headquarterBrokerRepository;
+        private readonly IBranchBrokerRepository _branchBrokerRepository;
+
+        public BrokerService(IMapper mapper, IHeadquarterBrokerRepository headquarterBrokerRepository, IBranchBrokerRepository branchBrokerRepository)
         {
             _mapper = mapper;
-            _brokerListContext = brokerListContext;
+            _headquarterBrokerRepository = headquarterBrokerRepository;
+            _branchBrokerRepository = branchBrokerRepository;
         }
 
         public async Task<int> DeleteBrokerAsync(string deleteCode)
@@ -30,29 +35,19 @@ namespace BrokerListService.Service
             int rowschanges = 0;
             if (deleteCode == "All")
             {
-                using (TransactionScope ts = new TransactionScope())
-                {
-                    var branchsBrokers = _brokerListContext.BranchBrokers.ToList();
-                    var headquarterBrokers = _brokerListContext.HeadquarterBrokers.ToList();
-                    _brokerListContext.BranchBrokers.RemoveRange(branchsBrokers);
-                    _brokerListContext.HeadquarterBrokers.RemoveRange(headquarterBrokers);
-                    rowschanges = _brokerListContext.SaveChanges();
-                    ts.Complete();
-                }
+                var branchBrokers = await _branchBrokerRepository.GetListAsync(x => true);
+                var headquarterBrokers = await _headquarterBrokerRepository.GetListAsync(x => true);
+                rowschanges += await _branchBrokerRepository.DeleteListAsync(branchBrokers);
+                rowschanges += await _headquarterBrokerRepository.DeleteListAsync(headquarterBrokers);
             }
             else 
             {
-                var headquarterBroker = _brokerListContext.HeadquarterBrokers.Include(c => c.BranchBrokers).Where(x => x.Code == deleteCode).FirstOrDefault();
+                var headquarterBroker = await _headquarterBrokerRepository.GetIncludeBranchAsync(x => x.Code == deleteCode);
                 if (headquarterBroker != null) 
                 {
                     var branchBrokers = headquarterBroker.BranchBrokers;
-                    using (TransactionScope ts = new TransactionScope())
-                    {
-                        _brokerListContext.BranchBrokers.RemoveRange(branchBrokers);
-                        _brokerListContext.HeadquarterBrokers.RemoveRange(headquarterBroker);
-                        rowschanges = _brokerListContext.SaveChanges();
-                        ts.Complete();
-                    }
+                    rowschanges += await _branchBrokerRepository.DeleteListAsync(branchBrokers);
+                    rowschanges += await _headquarterBrokerRepository.DeleteAsync(headquarterBroker);
                 }
             }
             return rowschanges;
@@ -66,7 +61,7 @@ namespace BrokerListService.Service
             if (!string.IsNullOrWhiteSpace(queryServiceModel.HeadquarterCode))
             {
                 headquarterPredicate = headquarterPredicate.And(x => x.Code == queryServiceModel.HeadquarterCode);
-                var headquarterId = (await _brokerListContext.HeadquarterBrokers.Where(headquarterPredicate).FirstOrDefaultAsync())?.HeadquarterBrokerId;
+                var headquarterId = await _headquarterBrokerRepository.GetHeadquarterIdByCodeAsync(headquarterPredicate);
                 if (headquarterId == null) return brokerRespServiceModels;
                 else
                 {
@@ -85,8 +80,8 @@ namespace BrokerListService.Service
                 headquarterPredicate = headquarterPredicate.And(x => x.EstablishmentDate <= queryServiceModel.EndDate);
                 branchPredicate = branchPredicate.And(x => x.EstablishmentDate <= queryServiceModel.EndDate);
             }
-            var headquarterBrokers = await _brokerListContext.HeadquarterBrokers.Where(headquarterPredicate).ToListAsync();
-            var branchBrokers =  await _brokerListContext.BranchBrokers.Where(branchPredicate).ToListAsync();
+            var branchBrokers = await _branchBrokerRepository.GetListAsync(branchPredicate);
+            var headquarterBrokers = await _headquarterBrokerRepository.GetListAsync(headquarterPredicate);
             brokerRespServiceModels.AddRange(_mapper.Map<List<BrokerRespServiceModel>>(headquarterBrokers));
             brokerRespServiceModels.AddRange(_mapper.Map<List<BrokerRespServiceModel>>(branchBrokers));
             return brokerRespServiceModels;
